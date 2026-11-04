@@ -40,7 +40,7 @@ function speak(txt){
     if(!('speechSynthesis' in window))return;
     if(speechSynthesis.speaking&&speechSynthesis.pending)return; // never build a backlog
     const u=new SpeechSynthesisUtterance(txt);
-    u.rate=1.1;u.pitch=0.85;u.volume=1;
+    u.rate=1.35;u.pitch=0.95;u.volume=1;
     const vs=speechSynthesis.getVoices();
     const en=vs.find(v=>v.lang&&v.lang.toLowerCase().indexOf('en')===0);
     if(en)u.voice=en;
@@ -50,7 +50,7 @@ function speak(txt){
 let careerWins={};
 try{careerWins=JSON.parse(localStorage.getItem('pb_career')||'{}')}catch(e){careerWins={}}
 let lastElim=null;
-function startMusic(){if(musicTimer||!AC)return;const bass=[55,55,82.4,55,65.4,55,98,73.4];let s=0;musicTimer=setInterval(()=>{if(!soundOn)return;beep(bass[s%bass.length],0.16,'sawtooth',0.028);if(s%2===0)beep(bass[s%bass.length]*4,0.08,'square',0.011);if(s%8===7)noise(0.05,0.02);s++},150)}
+function startMusic(){if(musicTimer||!AC)return;const bass=[55,55,82.4,55,65.4,55,98,73.4];let s=0;musicTimer=setInterval(()=>{if(!soundOn)return;beep(bass[s%bass.length],0.16,'sawtooth',0.055);if(s%2===0)beep(bass[s%bass.length]*4,0.08,'square',0.022);if(s%8===7)noise(0.05,0.035);s++},150)}
 // ---------- Flag discs (with gloss) ----------
 const discs={};
 function makeDisc(code){
@@ -126,7 +126,7 @@ function eliminate(b,by){
   if(!b.alive)return;b.alive=false;
   shake=Math.min(15,shake+7);
   rings.push({x:b.x,y:b.y,r:6,t:0,life:0.45,color:TEAMCOL[b.team]});
-  for(let i=0;i<14;i++)particles.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*280,vy:(Math.random()-0.5)*280,t:0,life:0.5+Math.random()*0.25,c:i%3?TEAMCOL[b.team]:"#ffffff",r:2+Math.random()*2.6});
+  for(let i=0;i<9;i++)particles.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*280,vy:(Math.random()-0.5)*280,t:0,life:0.5+Math.random()*0.25,c:i%3?TEAMCOL[b.team]:"#ffffff",r:2+Math.random()*2.6});
   popups.push({x:b.x,y:b.y-14,txt:b.name+" OUT!",color:"#ffffff",t:0,life:0.95,big:false});
   lastElim={name:b.name,code:b.code,team:b.team,t:0};
   speak(b.name+" is out!");
@@ -184,7 +184,7 @@ function update(dt){
   popups=popups.filter(p=>p.t<p.life);
   feed.forEach(f=>f.t+=dt);feed=feed.filter(f=>f.t<5);
   if(lastElim)lastElim.t+=dt;
-  balls.forEach(b=>{if(b.alive&&(phase==="battle")){b.trail.unshift({x:b.x,y:b.y});if(b.trail.length>7)b.trail.pop()}});
+  balls.forEach(b=>{if(b.alive&&(phase==="battle")){b.trail.unshift({x:b.x,y:b.y});if(b.trail.length>5)b.trail.pop()}});
   if(phase==="predict"){
     predictT-=dt;
     for(const b of balls){b.x=b.fx+Math.sin(predictT*2+b.phase)*3;b.y=b.fy+Math.cos(predictT*2.4+b.phase)*3}
@@ -227,7 +227,7 @@ function update(dt){
       const aliveB=balls.filter(b=>b.alive);
       if(aliveB.length){const c=aliveB[(Math.random()*aliveB.length)|0];
         rings.push({x:c.x,y:c.y,r:10,t:0,life:0.5,color:"#ff9800"});
-        for(let i=0;i<16;i++)particles.push({x:c.x,y:c.y,vx:(Math.random()-0.5)*380,vy:(Math.random()-0.5)*380,t:0,life:0.4,c:"#ffb74d",r:2+Math.random()*2});
+        for(let i=0;i<10;i++)particles.push({x:c.x,y:c.y,vx:(Math.random()-0.5)*380,vy:(Math.random()-0.5)*380,t:0,life:0.4,c:"#ffb74d",r:2+Math.random()*2});
         for(const b of aliveB){const dx=b.x-c.x,dy=b.y-c.y,d=Math.hypot(dx,dy);if(d<135&&d>1){b.vx+=dx/d*330;b.vy+=dy/d*330}}
         shake=Math.min(15,shake+8);noise(0.28,0.14);beep(95,0.25,'sine',0.10,40);
         popups.push({x:c.x,y:c.y-20,txt:"💥 BLAST!",color:"#ff9800",t:0,life:0.9,big:false});}}}
@@ -284,11 +284,9 @@ function drawBall(b){
   }
   const disc=discs[b.code];
   ctx.save();ctx.translate(b.x,b.y);
-  ctx.shadowBlur=7;ctx.shadowColor="rgba(0,0,0,0.6)";
   if(b.flash>0){ctx.beginPath();ctx.arc(0,0,b.r+4,0,7);ctx.fillStyle="rgba(255,255,255,0.6)";ctx.fill()}
   if(disc)ctx.drawImage(disc,-b.r-2.5,-b.r-2.5,(b.r+2.5)*2,(b.r+2.5)*2);
   else{ctx.beginPath();ctx.arc(0,0,b.r,0,7);ctx.fillStyle="#345";ctx.fill()}
-  ctx.shadowBlur=0;
   ctx.beginPath();ctx.arc(0,0,b.r+1.5,0,7);ctx.lineWidth=2.6;ctx.strokeStyle=TEAMCOL[b.team];ctx.stroke();
   if(phase==="battle"&&b.hp<ballMaxHp){ctx.fillStyle="#fff";
     for(let k=0;k<b.hp;k++){ctx.beginPath();ctx.arc(-(b.hp-1)*3+k*6,b.r+5.5,1.8,0,7);ctx.fill()}}
@@ -506,7 +504,10 @@ document.getElementById('btnSound').addEventListener('click',function(){
   if(soundOn)startMusic();
 });
 cv.addEventListener('click',()=>{if(phase==="idle")doStart()});
-if(new URLSearchParams(location.search).has('auto'))doStart();
+const QP=new URLSearchParams(location.search);
+if(QP.has('snd')){soundOn=true;document.getElementById('btnSound').textContent="🔊 SOUND: ON"}
+if(QP.has('auto')){doStart();
+  let tries=0;const iv=setInterval(()=>{if(AC&&AC.state==='suspended')AC.resume();if(++tries>24||(AC&&AC.state==='running'))clearInterval(iv)},500);}
 </script>
 </body>
 </html>
